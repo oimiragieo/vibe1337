@@ -1,0 +1,15 @@
+# VIBE1337 Requirements
+# The Ultimate AI Agent Dependencies
+
+# Core async support
+aiohttp>=3.8.0
+
+# Web search capability
+duckduckgo-search>=3.8.0
+
+# API clients for LLM providers (optional)
+openai>=1.0.0
+anthropic>=0.7.0
+
+# Utilities
+python-dotenv>=1.0.0
