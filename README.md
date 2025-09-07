@@ -1,6 +1,6 @@
 # VIBE1337 - The Ultimate AI Agent
 
-## The REAL Agent - Not Regex Bullshit
+## The REAL Agent - Not Regex
 
 This is a TRUE AI agent where the LLM makes ALL decisions, not hardcoded patterns.
 
