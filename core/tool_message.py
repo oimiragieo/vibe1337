@@ -57,9 +57,7 @@ def format_schema_for_strict(schema: Any) -> None:
                 schema["properties"] = {}
                 schema["required"] = []
 
-        anyOf = (
-            schema.get("oneOf", []) + schema.get("allOf", []) + schema.get("anyOf", [])
-        )
+        anyOf = schema.get("oneOf", []) + schema.get("allOf", []) + schema.get("anyOf", [])
         if "allOf" in schema or "oneOf" in schema or "anyOf" in schema:
             schema["anyOf"] = anyOf
 
@@ -306,13 +304,9 @@ class ToolMessage(ABC, BaseModel):
         """
         schema = copy.deepcopy(cls.schema())
         docstring = parse(cls.__doc__ or "")
-        parameters = {
-            k: v for k, v in schema.items() if k not in ("title", "description")
-        }
+        parameters = {k: v for k, v in schema.items() if k not in ("title", "description")}
         for param in docstring.params:
-            if (name := param.arg_name) in parameters["properties"] and (
-                description := param.description
-            ):
+            if (name := param.arg_name) in parameters["properties"] and (description := param.description):
                 if "description" not in parameters["properties"][name]:
                     parameters["properties"][name]["description"] = description
 
@@ -326,9 +320,7 @@ class ToolMessage(ABC, BaseModel):
             if field not in excludes and (defaults or details.get("default") is None)
         }
         parameters["required"] = sorted(
-            k
-            for k, v in parameters["properties"].items()
-            if ("default" not in v and k not in excludes)
+            k for k, v in parameters["properties"].items() if ("default" not in v and k not in excludes)
         )
         if request:
             parameters["required"].append("request")
@@ -345,8 +337,7 @@ class ToolMessage(ABC, BaseModel):
                 schema["description"] = docstring.short_description
             else:
                 schema["description"] = (
-                    f"Correctly extracted `{cls.__name__}` with all "
-                    f"the required parameters with correct types"
+                    f"Correctly extracted `{cls.__name__}` with all " f"the required parameters with correct types"
                 )
 
         # Handle nested ToolMessage fields
@@ -357,10 +348,7 @@ class ToolMessage(ABC, BaseModel):
 
                     remove_if_exists("purpose", v["properties"])
                     remove_if_exists("id", v["properties"])
-                    if (
-                        "request" in v["properties"]
-                        and "default" in v["properties"]["request"]
-                    ):
+                    if "request" in v["properties"] and "default" in v["properties"]["request"]:
                         if "required" not in v:
                             v["required"] = []
                         v["required"].append("request")
