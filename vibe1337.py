@@ -15,10 +15,8 @@ from pathlib import Path
 # Add current directory to path
 sys.path.append(str(Path(__file__).parent))
 
-from core.llm_orchestrator_fixed import LLMOrchestrator, ToolCall
-from core.tool_registry import ToolRegistry
-from core.execution_engine import ExecutionEngine
-from core.memory_system import MemorySystem
+from core.agent_service import AgentService
+from core.llm_orchestrator_fixed import ToolCall
 
 # Setup logging
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s")
@@ -43,44 +41,32 @@ class VIBE1337Agent:
         print(
             """
 ================================================================
-                                                              
-  ##   ##  ####  #####   #####   ##  #####  #####  #######   
-  ##   ##   ##   ##  ##  ##     ###  ##  ## ##  ##     ##    
-  ##   ##   ##   #####   ####    ##   ####   ####      ##    
-   ## ##    ##   ##  ##  ##      ##    ##     ##      ##     
-    ###    ####  #####   #####  ####  ####   ####     ##     
-                                                              
-           The Ultimate AI Agent - Path to Singularity       
+
+  ##   ##  ####  #####   #####   ##  #####  #####  #######
+  ##   ##   ##   ##  ##  ##     ###  ##  ## ##  ##     ##
+  ##   ##   ##   #####   ####    ##   ####   ####      ##
+   ## ##    ##   ##  ##  ##      ##    ##     ##      ##
+    ###    ####  #####   #####  ####  ####   ####     ##
+
+           The Ultimate AI Agent - Path to Singularity
 ================================================================
         """
         )
 
-        # Initialize components
-        self._initialize_components()
+        # Initialize unified agent service
+        self.agent = AgentService(self.config)
+
+        # Keep references for compatibility
+        self.tool_registry = self.agent.tool_registry
+        self.memory = self.agent.memory
+        self.execution_engine = self.agent.execution_engine
+        self.orchestrator = self.agent.orchestrator
 
         print("\n[+] VIBE1337 Initialized")
         print(f"[+] Available Models: {len(self.orchestrator.models)}")
         print(f"[+] Available Tools: {len(self.tool_registry.tools)}")
+        print(f"[+] Streaming: {'Enabled' if self.config.get('streaming', True) else 'Disabled'}")
         print("[+] Ready for singularity...\n")
-
-    def _initialize_components(self):
-        """Initialize all agent components"""
-        # Create tool registry
-        self.tool_registry = ToolRegistry()
-
-        # Create memory system
-        self.memory = MemorySystem(self.config.get("memory", {}))
-
-        # Create execution engine
-        self.execution_engine = ExecutionEngine(self.tool_registry)
-
-        # Create LLM orchestrator (the BRAIN)
-        self.orchestrator = LLMOrchestrator(self.config)
-
-        # Inject dependencies
-        self.orchestrator.tool_registry = self.tool_registry
-        self.orchestrator.memory = self.memory
-        self.orchestrator.execution_engine = self.execution_engine
 
     async def process(self, user_input: str) -> Dict[str, Any]:
         """
@@ -118,10 +104,33 @@ class VIBE1337Agent:
             response = await self.orchestrator._query_llm("primary", synthesis_prompt)
             return {"response": response, "type": "web_search"}
 
-        # Normal processing - LLM decides everything
-        result = await self.orchestrator.process(user_input)
+        # Normal processing - Use streaming if enabled
+        if self.config.get("streaming", True):
+            # Collect streaming response
+            full_response = ""
+            final_result = None
 
-        return result
+            async for chunk in self.agent.process_streaming(user_input):
+                chunk_type = chunk.get("type")
+
+                if chunk_type == "chunk":
+                    # Print streaming chunks in real-time
+                    content = chunk.get("content", "")
+                    print(content, end="", flush=True)
+                    full_response += content
+                elif chunk_type == "end":
+                    final_result = chunk
+                    if not full_response:
+                        # No streaming chunks, use final content
+                        full_response = chunk.get("content", "")
+
+            print()  # Newline after streaming
+
+            return final_result or {"response": full_response}
+        else:
+            # Non-streaming mode
+            result = await self.agent.process(user_input)
+            return result
 
     def _get_help_text(self) -> str:
         """Get help text"""
@@ -165,15 +174,19 @@ No need to specify - just ask naturally!
                     print("\n" + result["response"])
                     break
 
-                # Display response
-                response = result.get("response", "No response generated")
+                # Display response (if not already streamed)
+                if not self.config.get("streaming", True):
+                    response = result.get("response", "No response generated")
 
-                # Format based on type
-                if isinstance(response, dict):
-                    # If response is still a dict, format it nicely
-                    response = json.dumps(response, indent=2)
+                    # Format based on type
+                    if isinstance(response, dict):
+                        # If response is still a dict, format it nicely
+                        response = json.dumps(response, indent=2)
 
-                print(f"\nVIBE1337: {response}\n")
+                    print(f"\nVIBE1337: {response}\n")
+                else:
+                    # Response was already streamed, just add newline
+                    print()
 
                 # Show execution details if in debug mode
                 if self.config.get("debug"):
@@ -201,8 +214,8 @@ No need to specify - just ask naturally!
         try:
             loop.run_until_complete(self.run_interactive())
         finally:
-            # Save memory before exit
-            self.memory.save_memory()
+            # Shutdown agent service (saves memory)
+            self.agent.shutdown()
             loop.close()
 
 
@@ -214,11 +227,16 @@ def main():
     parser.add_argument("--debug", action="store_true", help="Enable debug mode")
     parser.add_argument("--model", type=str, help="Primary model to use")
     parser.add_argument("--memory-file", type=str, help="Memory file path")
+    parser.add_argument("--no-streaming", action="store_true", help="Disable streaming responses")
 
     args = parser.parse_args()
 
     # Create config
-    config = {"debug": args.debug, "memory": {}}
+    config = {
+        "debug": args.debug,
+        "streaming": not args.no_streaming,  # Default to streaming enabled
+        "memory": {}
+    }
 
     if args.model:
         config["primary_model"] = args.model
