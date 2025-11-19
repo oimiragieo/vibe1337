@@ -1,296 +1,373 @@
-# VIBE1337 - Root Directory
+# VIBE1337 - True LLM-Driven AI Agent
 
 ## Project Overview
-**VIBE1337** is a production-ready (95%) AI agent CLI where the LLM makes ALL decisions - true LLM-driven architecture, not regex-based patterns.
 
-## Status
-- **Production Readiness**: 95%
-- **Core Functionality**: 100% operational
-- **Security**: Enterprise-grade (hardened 2024-11)
-- **Testing**: All 4 core tests passing
+VIBE1337 is a sophisticated AI agent system where the LLM truly drives all decisions, tool selection, and execution planning. Unlike traditional hardcoded agents, VIBE1337 uses the LLM as the "brain" to analyze requests, create execution plans, select appropriate tools, and synthesize responses.
 
 ## Architecture
 
-### Active Core (5 files, ~1,400 LOC)
 ```
-vibe1337.py                          # CLI entry point (237 LOC)
-core/
-├── llm_orchestrator_fixed.py       # Brain - LLM decision engine (494 LOC)
-├── tool_registry.py                # Tool management (413 LOC)
-├── execution_engine.py             # Safe executor (112 LOC)
-└── memory_system.py                # JSON-based memory (146 LOC)
-```
-
-### Legacy/Unused Code (NOT integrated, ~70% of codebase)
-```
-tools/
-├── gptme_tools/                    # 27 tools (6,444 LOC) - Dependencies missing ⚠️
-└── mcp/                            # MCP protocol - Not wired ⚠️
-
-core/autogen_chat/                  # Microsoft AutoGen (40+ files) - Never imported ⚠️
-
-ui/
-├── voice/pocketflow_voice/         # Standalone voice app - No connection ⚠️
-└── web/websocket_server/           # Standalone web app - No connection ⚠️
+VIBE1337/
+├── vibe1337.py              # Main entry point - CLI interface
+├── core/                    # Core agent components
+│   ├── llm_orchestrator_fixed.py    # LLM brain (511 lines)
+│   ├── tool_registry.py             # Tool management (492 lines)
+│   ├── execution_engine.py          # Safe tool execution (112 lines)
+│   ├── memory_system.py             # Context & learning (188 lines)
+│   └── autogen_chat/               # Advanced multi-agent system (5,421 lines)
+├── tools/                   # Tool implementations
+│   ├── gptme_tools/        # 24 advanced tools (9,000+ lines)
+│   └── mcp/                # MCP protocol support (584 lines)
+└── ui/                     # User interfaces
+    ├── web/                # WebSocket-based web UI
+    └── voice/              # Voice interaction interface
 ```
 
-## Core Features (Functional)
+## Core Components
 
-### Multi-Provider LLM Support ✅
-- **Ollama**: Local models (qwen2.5, mistral, llama, etc.)
-- **OpenAI**: GPT-4, GPT-4-turbo (fully implemented)
-- **Anthropic**: Claude 3 Opus/Sonnet/Haiku (fully implemented)
-- **Mock**: Testing mode (no API keys needed)
+### 1. **LLM Orchestrator** (`core/llm_orchestrator_fixed.py`)
+The brain of VIBE1337. Handles:
+- Multi-provider LLM support (Ollama, OpenAI, Anthropic)
+- Request analysis and execution plan creation
+- Tool call orchestration
+- Response synthesis
+- Arena consensus (multi-model voting)
 
-### Tool System (4 Active Tools) ✅
-1. **filesystem** - read/write/list/create/delete files
-   - Security: Path normalization, boundary checks, sensitive file blacklist
-2. **shell** - execute shell commands
-   - Security: Whitelist (30+ safe commands), pattern blocking, no chaining
-3. **web_search** - DuckDuckGo search (no API key needed)
-4. **python_executor** - run Python code
-   - Security: Sandboxed execution, restricted builtins
+**Key Classes:**
+- `LLMOrchestrator` - Main orchestration engine
+- `ExecutionPlan` - Multi-step execution plans
+- `ExecutionStep` - Individual plan steps
+- `ToolCall` - Structured tool invocations
 
-### Special Commands ✅
-- `@ARENA <query>` - Multi-model consensus
-- `@WEB <query>` - Force web search
-- `help` - Show available commands
-- `exit` - Graceful shutdown
+### 2. **Tool Registry** (`core/tool_registry.py`)
+Central tool management system using OpenAI function calling format.
 
-### Memory System ✅
-- JSON-based persistence (secure, human-readable)
-- Automatic migration from legacy pickle files
-- Conversation history tracking
-- Pattern learning capability
+**Currently Integrated Tools (4):**
+- `FileSystemTool` - File operations (read, write, list, create_dir, delete)
+- `ShellTool` - Safe command execution (30+ whitelisted commands)
+- `WebSearchTool` - DuckDuckGo web search
+- `PythonExecutorTool` - Sandboxed Python code execution
 
-## Security Posture (Enterprise-Grade)
+**Security Features:**
+- Path traversal protection
+- Sensitive file blacklist
+- Command injection prevention
+- Dangerous pattern blocking
+- Restricted Python builtins
 
-### Fixed Vulnerabilities ✅
-1. **Path Traversal**: Hardened with normalization, boundaries, blacklist
-2. **Shell Injection**: Whitelist approach (30+ safe commands)
-3. **Pickle RCE**: Migrated to JSON with auto-conversion
-4. **Command Chaining**: Blocked (&&, ||, ;, `, $())
+### 3. **Execution Engine** (`core/execution_engine.py`)
+Safe tool execution with comprehensive error handling and validation.
 
-### Defense-in-Depth
-- Path validation (resolve symlinks, check boundaries)
-- Sensitive file blacklist (.env, .git, id_rsa, etc.)
-- Command whitelisting (not blacklisting)
-- Sandboxed Python execution
-- Human-readable data format (JSON)
+### 4. **Memory System** (`core/memory_system.py`)
+Conversation history, context management, and learning capabilities.
 
-## Quick Start
+### 5. **AutoGen Chat Module** (`core/autogen_chat/`)
+Advanced multi-agent coordination system with:
+- 6 agent types (Assistant, CodeExecutor, SocietyOfMind, etc.)
+- Multiple team strategies (RoundRobin, Selector, Swarm, DiGraph)
+- Full streaming support
+- MagenticOne orchestration
+- **Status:** Currently standalone, not integrated with main agent
 
+## Available But Unintegrated Components
+
+### GPTMe Tools (`tools/gptme_tools/`) - 24 Tools Ready
+
+**Browser Tools (4):**
+- `browser.py` - General browser automation
+- `_browser_lynx.py` - Lynx text browser
+- `_browser_perplexity.py` - Perplexity AI search
+- `_browser_playwright.py` - Playwright automation (325 lines)
+
+**Development Tools (7):**
+- `python.py` - IPython execution (277 lines)
+- `shell.py` - Advanced shell scripting (723 lines)
+- `patch.py` - Code patching (307 lines)
+- `save.py` - File operations (299 lines)
+- `read.py` - File reading (92 lines)
+- `gh.py` - GitHub operations (206 lines)
+- `tmux.py` - Terminal multiplexer (325 lines)
+
+**Media Tools (4):**
+- `vision.py` - Image analysis (173 lines)
+- `screenshot.py` - Screen capture (95 lines)
+- `tts.py` - Text-to-speech (460 lines)
+- `youtube.py` - YouTube interaction (77 lines)
+
+**AI/Research Tools (3):**
+- `rag.py` - RAG implementation (125 lines)
+- `subagent.py` - Sub-agent creation (81 lines)
+- `choice.py` - Decision making (104 lines)
+
+**System Tools (3):**
+- `computer.py` - Screen automation, mouse/keyboard (804 lines)
+- `mcp_adapter.py` - MCP protocol adapter (215 lines)
+- `chats.py` - Chat management (89 lines)
+
+**Advanced Tools (3):**
+- `morph.py` - Code transformation (185 lines)
+
+### MCP Infrastructure (`tools/mcp/`)
+Model Context Protocol support - ready but not wired up:
+- `fastmcp_client.py` - Full MCP client (584 lines)
+- `decorators.py` - MCP decorators (38 lines)
+- **Integration point:** `tool_registry.py:add_mcp_tools()` is currently a stub
+
+## User Interfaces
+
+### CLI Interface (`vibe1337.py`)
+Interactive command-line interface with:
+- Natural language interaction
+- Special commands: `@ARENA`, `@WEB`, `help`, `exit`
+- Debug mode support
+- **Limitation:** No streaming responses
+
+### Web UI (`ui/web/websocket_server/`)
+FastAPI + WebSocket-based web interface:
+- Real-time chat interface
+- Streaming responses via OpenAI API
+- PocketFlow async flow engine
+- **Issue:** Standalone, doesn't use tool registry or LLM orchestrator
+
+### Voice UI (`ui/voice/pocketflow_voice/`)
+Voice interaction system:
+- Audio capture → STT → LLM → TTS pipeline
+- PocketFlow node-based processing
+- **Issue:** Standalone, no tool access, no streaming
+
+## Current Limitations & Issues
+
+### 1. Tool Integration Gap (86% unused)
+- **Available:** 28 tools
+- **Integrated:** 4 tools (14.3%)
+- **Impact:** Severely limited agent capabilities
+
+### 2. Disconnected Architecture
+- CLI, Web UI, and Voice UI are separate systems
+- No shared infrastructure or tool access
+- Duplicate LLM query implementations (4x)
+
+### 3. Streaming Inconsistency
+- AutoGen module: Full streaming ✅
+- Web UI: Full streaming ✅
+- Main CLI: No streaming ❌
+- Voice UI: No streaming ❌
+
+### 4. Missing Build Configuration
+- No `setup.py` or `pyproject.toml`
+- No Docker configuration
+- No automated testing framework (pytest)
+
+### 5. Code Duplication
+- 4 separate LLM query implementations
+- 3 separate processing loops
+- Duplicate message structures
+
+## Special Features
+
+### @ARENA - Multi-Model Consensus
+Query multiple LLMs and get consensus responses:
+```
+You: @ARENA What is the best approach to this problem?
+```
+
+### @WEB - Force Web Search
+Directly trigger web search with result synthesis:
+```
+You: @WEB Latest developments in AI agents
+```
+
+## Configuration
+
+### Environment Variables
+- `OPENAI_API_KEY` - OpenAI API access
+- `ANTHROPIC_API_KEY` - Claude API access
+- Ollama: Auto-detected from standard locations
+
+### Command-Line Options
 ```bash
-# Basic mode (no API keys needed)
+python vibe1337.py [--debug] [--model MODEL] [--memory-file PATH]
+```
+
+## Dependencies
+
+### Core Requirements (`requirements.txt`)
+- `aiohttp>=3.8.0` - Async HTTP client
+- `duckduckgo-search>=3.8.0` - Web search
+- `openai>=1.0.0` - OpenAI API
+- `anthropic>=0.7.0` - Claude API
+- `python-dotenv>=1.0.0` - Environment variables
+
+### Web UI Requirements
+- `fastapi==0.104.1`
+- `uvicorn[standard]==0.24.0`
+- `openai==1.3.8`
+- `pocketflow`
+
+### Voice UI Requirements
+- `openai`, `pocketflow`
+- `numpy`, `sounddevice`, `scipy`, `soundfile`
+
+## Entry Points
+
+### Main CLI
+```bash
 python vibe1337.py
+```
 
-# With Ollama (local, private)
-ollama pull qwen2.5:7b
-python vibe1337.py --model ollama:qwen2.5:7b
+### Web Interface
+```bash
+cd ui/web/websocket_server
+python main.py
+# Access: http://localhost:8000
+```
 
-# With OpenAI
-export OPENAI_API_KEY=sk-...
-python vibe1337.py --model openai:gpt-4
+### Voice Interface
+```bash
+cd ui/voice/pocketflow_voice
+python main.py
+```
 
-# With Anthropic
-export ANTHROPIC_API_KEY=sk-ant-...
-python vibe1337.py --model anthropic:claude
+### Test Suite
+```bash
+python test_debug.py
+```
 
-# Debug mode
+## Processing Flow
+
+1. **User Input** → `VIBE1337Agent.process()`
+2. **LLM Analysis** → `LLMOrchestrator.process()`
+   - Creates execution plan with tool calls
+   - Analyzes intent and context
+3. **Tool Execution** → `ExecutionEngine.execute()`
+   - Validates parameters
+   - Executes tools safely
+   - Handles errors
+4. **Response Synthesis** → `LLMOrchestrator._synthesize_response()`
+   - Combines tool results
+   - Generates natural language response
+5. **Memory Update** → `MemorySystem.add_interaction()`
+
+## Security Considerations
+
+### File System Protection
+- Path traversal prevention
+- Sensitive file blacklist (`.env`, `.ssh`, etc.)
+- Working directory restriction
+
+### Shell Command Protection
+- Whitelist of 30+ safe commands
+- Dangerous pattern blocking (rm -rf /, fork bombs, etc.)
+- Command chaining disabled
+- Command substitution blocked
+
+### Python Execution Sandbox
+- Restricted builtins
+- No file system access
+- No network access
+- 10-second timeout
+
+## Production Readiness
+
+### Current Status: 60-70%
+- **Core functionality:** 95% ✅
+- **Tool integration:** 15% ⚠️
+- **Streaming support:** 40% ⚠️
+- **Testing:** 20% ⚠️
+- **Documentation:** 95% ✅
+
+### High-Priority Improvements Needed
+1. Integrate 24 unintegrated gptme_tools
+2. Add streaming to main CLI
+3. Unify UI implementations around shared agent
+4. Wire up MCP infrastructure
+5. Add pytest and comprehensive testing
+6. Create build/deployment configuration
+
+## Development Guidelines
+
+### Adding New Tools
+1. Inherit from `BaseTool` in `core/tool_registry.py`
+2. Implement `_build_schema()` with OpenAI format
+3. Implement `execute(**kwargs)` with validation
+4. Register in `ToolRegistry._initialize_default_tools()`
+
+### Testing
+```bash
+# Run debug test suite
+python test_debug.py
+
+# Test individual components
+python -c "from core.tool_registry import ToolRegistry; r = ToolRegistry(); print(r.get_tool_names())"
+```
+
+### Debugging
+```bash
+# Enable debug mode
 python vibe1337.py --debug
 
-# Run tests
-python test_debug.py
+# Check available models
+python -c "from core.llm_orchestrator_fixed import LLMOrchestrator; o = LLMOrchestrator({}); print(o.models)"
 ```
 
-## Usage Examples
-
-```
-You: list files in current directory
-VIBE1337: [LLM decides to use filesystem tool, executes, returns results]
-
-You: @WEB latest quantum computing news
-VIBE1337: [Searches web, synthesizes results from multiple sources]
-
-You: @ARENA What is the meaning of consciousness?
-VIBE1337: [Queries multiple models, provides consensus view]
-
-You: write a python function to calculate fibonacci
-VIBE1337: [LLM writes code, can execute it if requested]
-```
-
-## Key Files
-
-### Entry Points
-- **vibe1337.py** - Main CLI application
-- **test_debug.py** - Test suite (4 tests, all passing)
+## File Structure Details
 
 ### Documentation
-- **README.md** - Project introduction
-- **EXECUTIVE_SUMMARY.md** - ✅ ACCURATE status (95% ready)
-- **QUICK_REFERENCE.md** - ⚠️ OUTDATED (claims 50% ready, lists fixed bugs)
-- **CODEBASE_ANALYSIS.md** - Deep technical analysis
-- **IMPROVEMENTS_IMPLEMENTED.md** - Changelog of fixes
+- `README.md` - Project overview
+- `EXECUTIVE_SUMMARY.md` - Executive summary
+- `ANALYSIS_DELIVERABLES.md` - Analysis reports
+- `ANALYSIS_SUMMARY.md` - Summary of analysis
+- `CODEBASE_ANALYSIS.md` - Detailed code analysis
+- `IMPROVEMENTS_IMPLEMENTED.md` - Implementation log
+- `QUICK_REFERENCE.md` - Quick reference guide
+- `PUBLISH_CHECKLIST.md` - Publishing checklist
 
-### Configuration
-- **requirements.txt** - Dependencies (aiohttp, duckduckgo-search, openai, anthropic)
-- **.gitignore** - Git exclusions (includes *.md in claude.md pattern)
-- **LICENSE** - MIT License
+### Test Files
+- `test_debug.py` - Main test suite
 
-## Environment Variables
+## Known Issues & TODOs
 
-```bash
-OPENAI_API_KEY      # Optional - for GPT-4 access
-ANTHROPIC_API_KEY   # Optional - for Claude access
-# No env vars needed for Ollama (local) or mock mode
-```
+### Critical
+- [ ] Integrate 24 gptme_tools into ToolRegistry
+- [ ] Wire up MCP infrastructure (`add_mcp_tools` is stub)
+- [ ] Add streaming to main CLI
+- [ ] Unify UI implementations
 
-## Data Files
+### High Priority
+- [ ] Add pytest configuration
+- [ ] Create setup.py/pyproject.toml
+- [ ] Consolidate duplicate LLM query methods
+- [ ] Remove mock responses from orchestrator
 
-- **vibe1337_memory.json** - Conversation history and learned patterns
-  - Auto-created on first run
-  - Auto-migrates from legacy .pkl files
-  - Human-readable JSON format
+### Medium Priority
+- [ ] Add Docker configuration
+- [ ] Implement proper logging
+- [ ] Add CI/CD pipeline
+- [ ] Expand test coverage
 
-## Development Status
+### Low Priority
+- [ ] Add type hints throughout
+- [ ] Add docstrings to all functions
+- [ ] Create API documentation
+- [ ] Add performance monitoring
 
-### ✅ Complete & Production Ready
-- LLM orchestration (all 3 providers)
-- Tool execution engine
-- Security hardening
-- Memory system
-- Core functionality
-- Test coverage
+## Contributing
 
-### ⚠️ Incomplete/Not Integrated
-- GPTMe tools (included but not wired)
-- AutoGen multi-agent (included but not imported)
-- Voice UI (standalone, no connection)
-- Web UI (standalone, no connection)
-- MCP protocol (client exists, not integrated)
-- Streaming responses (mentioned but not implemented)
+When modifying this codebase:
+1. Update relevant claude.md files
+2. Add tests for new functionality
+3. Follow existing code patterns
+4. Update documentation
+5. Run test suite before committing
 
-### 📊 Code Quality
-- 100% PEP 8 compliant (black formatted)
-- 0 linting errors (flake8 clean)
-- Type hints (dataclasses)
-- Comprehensive error handling
-- Async/await patterns
-- Professional logging
+## License
 
-## Testing
+See LICENSE file for details.
 
-```bash
-# Run full test suite
-python test_debug.py
+## Version
 
-# Tests included:
-# 1. Execution plan parsing (JSON extraction, fallback)
-# 2. Tool schema generation (OpenAI format)
-# 3. Tool execution (filesystem, shell, etc.)
-# 4. Full agent flow (end-to-end)
-
-# All tests: ✅ PASSING
-```
-
-## Known Issues
-
-### Documentation
-1. **QUICK_REFERENCE.md is severely outdated** - Claims bugs that are fixed
-2. **No claude.md files existed** - Now being created
-3. **Unused code not documented** - ~70% of codebase is legacy
-
-### Code
-1. **Large unused codebase** - gptme_tools, autogen_chat, UI not integrated
-2. **UI apps disconnected** - Voice and web UIs are standalone
-3. **No streaming** - Single-threaded, buffered responses
-4. **Limited test coverage** - Only 4 integration tests
-
-## Competitive Advantages
-
-### VIBE1337 vs Claude CLI
-**Where VIBE1337 Wins:**
-- ✅ Multi-model (Ollama, OpenAI, Anthropic vs Claude-only)
-- ✅ Privacy (100% local with Ollama vs Cloud-only)
-- ✅ Cost (Free local models vs Pay-per-call)
-- ✅ Open Source (Fully auditable vs Closed)
-- ✅ Customizable (Extensible vs Limited)
-
-**Where Claude CLI Wins:**
-- Tool ecosystem (100+ tools vs 4 core tools)
-- Polish (100% vs 95%)
-- Streaming (Yes vs No)
-
-## Recommendations
-
-### Immediate (High Priority)
-1. ✅ Update QUICK_REFERENCE.md to match current state
-2. ✅ Create claude.md files for all directories
-3. ✅ Document unused/legacy components clearly
-4. Add .md files to .gitignore exemption for claude.md
-
-### Short-term (1-2 weeks)
-1. Integrate GPTMe tools (ready but not wired)
-2. Add streaming support
-3. Expand test coverage (unit tests)
-4. Connect UI apps to core agent
-
-### Medium-term (1-2 months)
-1. Integrate MCP protocol
-2. Implement AutoGen multi-agent patterns
-3. Add vector memory (semantic search)
-4. Performance optimization
-
-### Long-term (3+ months)
-1. Remove unused code (70% reduction) or fully integrate it
-2. Production deployment hardening
-3. Advanced features (self-improvement, research)
-4. Physical world integration (robotics)
-
-## For AI Assistants
-
-When working with this codebase:
-
-1. **Only modify core files** (vibe1337.py, core/*.py)
-2. **Do NOT integrate** gptme_tools without full dependency audit
-3. **Do NOT modify** autogen_chat (not used)
-4. **UI apps are standalone** - treat separately
-5. **EXECUTIVE_SUMMARY.md is the source of truth** for status
-6. **All security fixes are implemented** - don't regress them
-7. **All tests must pass** before committing
-
-## Git Workflow
-
-```bash
-# Current branch
-git status  # claude/audit-codebase-documentation-0149ASpEuJMPW6Bj8oFQisXP
-
-# Add changes
-git add .
-
-# Commit with clear message
-git commit -m "docs: Complete codebase audit and claude.md creation"
-
-# Push to feature branch
-git push -u origin claude/audit-codebase-documentation-0149ASpEuJMPW6Bj8oFQisXP
-```
-
-## Links
-
-- **Repository**: https://github.com/oimiragieo/vibe1337
-- **Pull Requests**: Check GitHub for open PRs
-- **Issues**: Report bugs on GitHub
-
-## Summary
-
-VIBE1337 is a **production-ready (95%)** AI agent CLI with:
-- ✅ True LLM-driven architecture (not regex patterns)
-- ✅ Multi-provider support (Ollama, OpenAI, Anthropic)
-- ✅ Enterprise-grade security (all vulnerabilities fixed)
-- ✅ Clean, professional codebase (100% PEP 8 compliant)
-- ⚠️ Large unused codebase (~70%) that needs cleanup or integration
-- ⚠️ Standalone UI apps not connected to core agent
-- ⚠️ Documentation inconsistencies (now being fixed)
-
-The core 5 files (~1,400 LOC) are **solid, tested, and production-ready**.
-The remaining ~20,000 LOC is legacy/reference code awaiting integration or removal.
+Current Status: v2.0 (Post-Initial-Review)
+- Core functionality: Working
+- Tool integration: Partial (4/28 tools)
+- UI implementations: Standalone
+- Production ready: 60-70%

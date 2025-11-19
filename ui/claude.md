@@ -1,442 +1,525 @@
-# ui/ - VIBE1337 User Interfaces
+# UI Module - User Interfaces for VIBE1337
 
 ## Overview
-Contains user interface implementations for VIBE1337. **Important**: These are **STANDALONE APPLICATIONS** that are **NOT CONNECTED** to the main VIBE1337 agent (vibe1337.py).
 
-## Status
-- **Integration with main agent**: ⚠️ **0%** - Not connected
-- **Standalone functionality**: ✅ Potentially working (not tested)
-- **Framework**: PocketFlow (workflow orchestration)
-- **Recommendation**: Either integrate or document as separate projects
+The `ui/` directory contains alternative user interfaces for interacting with the VIBE1337 agent. Currently includes a web-based chat interface and a voice interaction interface.
 
-## Directory Structure
+**Critical Issue:** Both UIs are **standalone implementations** that bypass the core agent infrastructure (ToolRegistry, LLMOrchestrator, MemorySystem). They make direct OpenAI API calls instead of using the unified agent architecture.
+
+## Structure
 
 ```
 ui/
-├── voice/                      # ⚠️ STANDALONE - Voice chat interface
-│   └── pocketflow_voice/       # OpenAI STT/TTS with PocketFlow
-└── web/                        # ⚠️ STANDALONE - Web interface
-    └── websocket_server/       # FastAPI + WebSocket
+├── web/                           # Web-based chat interface
+│   └── websocket_server/         # FastAPI + WebSocket server
+│       ├── main.py               # Server entry point
+│       ├── flow.py               # PocketFlow flow definition
+│       ├── nodes.py              # Streaming chat node
+│       ├── requirements.txt      # Web UI dependencies
+│       ├── README.md
+│       ├── static/
+│       │   └── index.html        # Chat interface
+│       ├── docs/
+│       │   └── design.md
+│       └── utils/
+│           ├── __init__.py
+│           └── stream_llm.py     # OpenAI streaming utility
+│
+└── voice/                        # Voice interaction interface
+    └── pocketflow_voice/
+        ├── main.py               # Voice entry point
+        ├── flow.py               # Voice flow definition
+        ├── nodes.py              # Audio processing nodes
+        ├── requirements.txt      # Voice UI dependencies
+        ├── README.md
+        ├── docs/
+        │   └── design.md
+        └── utils/
+            ├── __init__.py
+            ├── audio_utils.py    # Audio recording/playback
+            ├── call_llm.py       # Direct LLM API calls
+            ├── speech_to_text.py # STT processing
+            └── text_to_speech.py # TTS processing
 ```
 
 ---
 
-## ⚠️ voice/pocketflow_voice/ (STANDALONE)
+## Web UI (`web/websocket_server/`)
 
-**Status**: **NOT CONNECTED TO MAIN AGENT**
-- Standalone voice chat application
-- Uses PocketFlow for workflow orchestration
-- Uses OpenAI for STT (Speech-to-Text) and TTS (Text-to-Speech)
-- **NOT imported or referenced** by vibe1337.py
+### Purpose
+Browser-based chat interface with real-time streaming responses.
 
-### Files
+### Technology Stack
+- **FastAPI** - Web framework
+- **WebSocket** - Real-time bidirectional communication
+- **PocketFlow** - Async flow orchestration
+- **OpenAI API** - Direct LLM calls (**bypasses core agent**)
 
-**Main Application**:
-- `main.py` (27 LOC) - Entry point
-- `flow.py` (25 LOC) - PocketFlow workflow definition
-- `nodes.py` (unknown LOC) - Workflow nodes
-- `requirements.txt` (52 bytes) - Dependencies
+### Components
 
-**Utilities** (utils/):
-- `audio_utils.py` (4,910 bytes) - Audio processing
-- `call_llm.py` (583 bytes) - LLM API calls
-- `speech_to_text.py` (1,971 bytes) - OpenAI STT
-- `text_to_speech.py` (1,515 bytes) - OpenAI TTS
-- `tts_output.mp3` (65,664 bytes) - Sample audio output
-
-**Documentation**:
-- `README.md` (4,153 bytes) - Setup and usage
-- `docs/design.md` (9,064 bytes) - Architecture design
-
-### Architecture
-
-**Workflow** (PocketFlow-based):
-```
-1. CaptureAudioNode      → Record user speech
-2. SpeechToTextNode      → Convert to text (OpenAI Whisper)
-3. QueryLLMNode          → Get LLM response
-4. TextToSpeechNode      → Convert to speech (OpenAI TTS)
-   └─► Loop back to 1 (next turn)
-```
-
-**Code** (flow.py:1-25):
+#### `main.py` - FastAPI Server
 ```python
-from pocketflow import Flow
-from nodes import CaptureAudioNode, SpeechToTextNode, QueryLLMNode, TextToSpeechNode
-
-def create_voice_chat_flow() -> Flow:
-    capture_audio = CaptureAudioNode()
-    speech_to_text = SpeechToTextNode()
-    query_llm = QueryLLMNode()
-    text_to_speech = TextToSpeechNode()
-
-    # Define transitions
-    capture_audio >> speech_to_text
-    speech_to_text >> query_llm
-    query_llm >> text_to_speech
-    text_to_speech - "next_turn" >> capture_audio
-
-    return Flow(start=capture_audio)
-```
-
-### Dependencies
-```
-pocketflow
-openai
-sounddevice
-numpy
-scipy
-```
-
-### Key Issue
-**QueryLLMNode likely calls OpenAI directly**, NOT the VIBE1337 LLMOrchestrator!
-
-This means:
-- ❌ No multi-provider support (Ollama, Anthropic)
-- ❌ No tool calling
-- ❌ No memory system integration
-- ❌ No VIBE1337 execution engine
-- ✅ Just basic OpenAI chat
-
-### To Integrate with Main Agent
-1. Import VIBE1337Agent from vibe1337.py
-2. Modify QueryLLMNode to call agent.process(user_input)
-3. Handle async properly
-4. Share memory system
-5. Test end-to-end
-
----
-
-## ⚠️ web/websocket_server/ (STANDALONE)
-
-**Status**: **NOT CONNECTED TO MAIN AGENT**
-- Standalone FastAPI web server
-- WebSocket for real-time communication
-- Uses PocketFlow for workflow
-- **NOT imported or referenced** by vibe1337.py
-
-### Files
-
-**Main Application**:
-- `main.py` (40 LOC) - FastAPI server + WebSocket endpoint
-- `flow.py` (6 LOC) - PocketFlow workflow
-- `nodes.py` (unknown LOC) - Streaming chat node
-- `requirements.txt` (68 bytes) - Dependencies
-
-**Static Assets**:
-- `static/index.html` (7,288 bytes) - Chat interface
-- `assets/banner.png` (684,587 bytes) - VIBE1337 banner
-
-**Utilities** (utils/):
-- `stream_llm.py` (732 bytes) - LLM streaming
-- `__init__.py` (53 bytes)
-
-**Documentation**:
-- `README.md` (1,740 bytes) - Setup and usage
-- `docs/design.md` (3,036 bytes) - Architecture design
-
-### Architecture
-
-**FastAPI Server** (main.py:1-40):
-```python
-from fastapi import FastAPI, WebSocket
-from fastapi.staticfiles import StaticFiles
-from flow import create_streaming_chat_flow
-
-app = FastAPI()
-app.mount("/static", StaticFiles(directory="static"), name="static")
-
-@app.get("/")
-async def get_chat_interface():
-    return FileResponse("static/index.html")
-
 @app.websocket("/ws")
 async def websocket_endpoint(websocket: WebSocket):
-    await websocket.accept()
-    shared_store = {
-        "websocket": websocket,
-        "conversation_history": []
-    }
-    while True:
-        data = await websocket.receive_text()
-        shared_store["user_message"] = message.get("content", "")
-        flow = create_streaming_chat_flow()
-        await flow.run_async(shared_store)
+    - Accepts WebSocket connections
+    - Manages conversation history
+    - Creates and runs streaming flow
 ```
 
-**Workflow** (flow.py:1-6):
+**Entry Point:**
+```bash
+cd ui/web/websocket_server
+python main.py
+# Access: http://localhost:8000
+```
+
+#### `flow.py` - Flow Definition
+Creates PocketFlow for streaming chat:
 ```python
-from pocketflow import AsyncFlow
-from nodes import StreamingChatNode
-
 def create_streaming_chat_flow():
-    return AsyncFlow(start=StreamingChatNode())
+    - Defines chat processing pipeline
+    - Connects nodes
+    - Returns executable flow
 ```
+
+#### `nodes.py` - StreamingChatNode
+```python
+class StreamingChatNode(AsyncNode):
+    async def prep_async(self, shared):
+        - Prepares conversation history
+        - Gets user message and websocket
+
+    async def exec_async(self, prep_res):
+        - Calls stream_llm() for streaming response
+        - Sends chunks to websocket
+        - Returns full response
+
+    async def post_async(self, shared, prep_res, exec_res):
+        - Updates conversation history
+```
+
+**Streaming Format:**
+```json
+{"type": "start", "content": ""}
+{"type": "chunk", "content": "token"}
+{"type": "end", "content": ""}
+```
+
+#### `utils/stream_llm.py` - Streaming Utility
+```python
+async def stream_llm(messages):
+    - Creates AsyncOpenAI client
+    - Calls chat completion with stream=True
+    - Yields content chunks
+```
+
+**Issue:** Makes direct OpenAI calls, doesn't use:
+- ToolRegistry
+- LLMOrchestrator
+- ExecutionEngine
+- MemorySystem
+
+#### `static/index.html` - Chat Interface
+Modern chat UI with:
+- Message display
+- User input
+- Streaming visualization
+- WebSocket connection management
 
 ### Dependencies
 ```
-fastapi
-uvicorn
+fastapi==0.104.1
+uvicorn[standard]==0.24.0
+openai==1.3.8
 pocketflow
-websockets
 ```
 
-### Key Issue
-**StreamingChatNode likely calls LLM directly**, NOT VIBE1337!
+### Features
+- ✅ Real-time streaming responses
+- ✅ Conversation history
+- ✅ Clean, modern UI
+- ❌ No tool access
+- ❌ No agent integration
+- ❌ No memory persistence
 
-This means:
-- ❌ No VIBE1337 orchestrator
-- ❌ No tool calling
-- ❌ No multi-provider support
-- ❌ No security hardening
-- ❌ Separate conversation history (not shared with main agent)
-
-### To Integrate with Main Agent
-1. Import VIBE1337Agent from vibe1337.py
-2. Create agent instance in WebSocket handler
-3. Call agent.process(user_message)
-4. Stream response back over WebSocket
-5. Share memory system
-6. Handle errors gracefully
+### Limitations
+1. **Standalone** - Doesn't use core agent
+2. **No tools** - Can't execute filesystem, shell, web search, etc.
+3. **Direct API** - Bypasses LLMOrchestrator
+4. **No memory** - Session-only, not persistent
+5. **OpenAI only** - Can't use Ollama or Anthropic
 
 ---
 
-## Integration Challenges
+## Voice UI (`voice/pocketflow_voice/`)
 
-### Why They're Disconnected
+### Purpose
+Voice-based interaction using speech-to-text and text-to-speech.
 
-1. **Different frameworks**: Main agent is direct async/await, UIs use PocketFlow
-2. **Different entry points**: Each has its own main.py
-3. **Different dependencies**: UIs have additional requirements
-4. **No shared state**: Separate memory, conversation history
-5. **Not imported**: Grep confirms zero references to vibe1337.py
+### Technology Stack
+- **PocketFlow** - Node-based flow orchestration
+- **OpenAI Whisper** - Speech-to-text
+- **OpenAI TTS** - Text-to-speech
+- **sounddevice** - Audio capture
+- **scipy** - Audio processing
 
-### Integration Approaches
-
-**Option 1: Minimal Integration**
-```python
-# In voice/web nodes
-from vibe1337 import VIBE1337Agent
-
-class QueryLLMNode:
-    def __init__(self):
-        self.agent = VIBE1337Agent(config)
-
-    async def execute(self, shared):
-        result = await self.agent.process(shared["user_message"])
-        shared["llm_response"] = result["response"]
+### Architecture
+```
+Audio Input
+    ↓
+RecordAudioNode → audio_utils.record_audio()
+    ↓
+SpeechToTextNode → STT API
+    ↓
+QueryLLMNode → call_llm()
+    ↓
+TextToSpeechNode → TTS API
+    ↓
+PlayAudioNode → audio_utils.play_audio()
 ```
 
-**Option 2: Shared Service**
+### Components
+
+#### `main.py` - Entry Point
 ```python
-# Run VIBE1337 as a service
-# UIs call it via HTTP/WebSocket
-# Requires: Adding API endpoints to VIBE1337
-
-# In vibe1337.py
-from fastapi import FastAPI
-app = FastAPI()
-
-@app.post("/query")
-async def query(text: str):
-    return await agent.process(text)
-
-# UIs call: requests.post("http://localhost:8080/query", ...)
+def main():
+    - Creates voice interaction flow
+    - Runs async event loop
+    - Processes voice input/output
 ```
 
-**Option 3: Merge Codebases**
-```python
-# Merge UI code into vibe1337.py
-# Add FastAPI routes alongside CLI
-# Unified memory and configuration
-```
-
-**Recommendation**: Option 1 (minimal integration) is fastest
-
----
-
-## PocketFlow Framework
-
-**What is PocketFlow?**
-- Lightweight workflow orchestration framework
-- Node-based execution flow
-- Supports sync and async operations
-- State sharing via `shared` dict
-
-**Why it's used here**:
-- Clean separation of concerns
-- Easy to visualize workflow
-- Handles state transitions
-- Async support for IO-bound operations
-
-**Example**:
-```python
-from pocketflow import Flow, Node
-
-class MyNode(Node):
-    async def execute(self, shared):
-        shared["result"] = "processed"
-        return "next_action"
-
-node1 = MyNode()
-node2 = AnotherNode()
-
-# Define transitions
-node1 >> node2  # Default transition
-node1 - "error" >> error_handler  # Conditional transition
-
-flow = Flow(start=node1)
-flow.run(shared_state)
-```
-
----
-
-## Running the UIs
-
-### Voice Chat
+**Run:**
 ```bash
 cd ui/voice/pocketflow_voice
-pip install -r requirements.txt
-export OPENAI_API_KEY=sk-...
 python main.py
 ```
 
-**Expected behavior**:
-1. Captures audio from microphone
-2. Sends to OpenAI Whisper (STT)
-3. Calls LLM (likely OpenAI, not VIBE1337)
-4. Converts response to speech (TTS)
-5. Plays audio
-6. Loops
+#### `flow.py` - Voice Flow
+```python
+def create_voice_flow():
+    - Connects audio nodes in sequence
+    - Defines voice processing pipeline
+```
 
-### Web Chat
+#### `nodes.py` - Processing Nodes
+
+**RecordAudioNode** - Captures audio from microphone
+**SpeechToTextNode** - Converts speech to text
+**QueryLLMNode** - Sends text to LLM (**direct API call**)
+**TextToSpeechNode** - Converts response to speech
+**PlayAudioNode** - Plays audio response
+
+#### `utils/` - Utility Modules
+
+**`audio_utils.py`** - Audio I/O
+- `record_audio()` - Capture from microphone
+- `play_audio()` - Playback audio
+- `save_audio()` - Write audio files
+
+**`speech_to_text.py`** - STT
+```python
+async def speech_to_text(audio_data):
+    - Uses OpenAI Whisper API
+    - Converts audio to text
+```
+
+**`text_to_speech.py`** - TTS
+```python
+async def text_to_speech(text):
+    - Uses OpenAI TTS API
+    - Returns audio data
+```
+
+**`call_llm.py`** - LLM Interaction
+```python
+async def call_llm(message):
+    - Direct OpenAI API call
+    - Returns text response
+```
+
+**Issue:** Bypasses all core agent functionality.
+
+### Dependencies
+```
+openai
+pocketflow
+numpy
+sounddevice
+scipy
+soundfile
+```
+
+### Features
+- ✅ Voice input (STT)
+- ✅ Voice output (TTS)
+- ✅ End-to-end voice interaction
+- ❌ No tool access
+- ❌ No agent integration
+- ❌ No streaming (waits for full response)
+- ❌ Linear flow only
+
+### Limitations
+1. **Standalone** - Doesn't use core agent
+2. **No tools** - Can't access tools
+3. **Direct API** - Bypasses LLMOrchestrator
+4. **No streaming** - Waits for complete response
+5. **OpenAI only** - Can't use Ollama or Anthropic
+6. **No conversation history** - Each interaction is isolated
+
+---
+
+## Integration Issues
+
+### Current Architecture
+```
+┌─────────────────┐     ┌──────────────────┐     ┌──────────────────┐
+│   CLI Agent     │     │    Web UI        │     │    Voice UI      │
+│  (vibe1337.py)  │     │  (FastAPI)       │     │  (PocketFlow)    │
+├─────────────────┤     ├──────────────────┤     ├──────────────────┤
+│ LLMOrchestrator │     │ OpenAI Direct    │     │ OpenAI Direct    │
+│ ToolRegistry    │     │ No Tools         │     │ No Tools         │
+│ MemorySystem    │     │ Session Memory   │     │ No Memory        │
+│ 4 Tools ✅       │     │ Streaming ✅      │     │ Voice I/O ✅      │
+│ No Streaming ❌  │     │ No Tools ❌       │     │ No Tools ❌       │
+└─────────────────┘     └──────────────────┘     └──────────────────┘
+     Separate              Separate               Separate
+```
+
+### Problems
+1. **Code Duplication** - 3 separate LLM query implementations
+2. **Feature Fragmentation** - Each UI has different capabilities
+3. **No Consistency** - Different behavior across UIs
+4. **Wasted Potential** - UIs can't access 28 available tools
+
+---
+
+## Recommended Integration
+
+### Unified Architecture
+```
+┌────────────────────────────────────────────────────────┐
+│                   VIBE1337Agent (Core)                  │
+│  ┌──────────────────────────────────────────────────┐  │
+│  │            LLMOrchestrator (Brain)                │  │
+│  │  ┌──────────┐  ┌──────────┐  ┌──────────────┐   │  │
+│  │  │ Ollama   │  │ OpenAI   │  │  Anthropic   │   │  │
+│  │  └──────────┘  └──────────┘  └──────────────┘   │  │
+│  └──────────────────────────────────────────────────┘  │
+│  ┌──────────────────────────────────────────────────┐  │
+│  │     ToolRegistry (28 Tools)                       │  │
+│  │  [filesystem, shell, web, python, browser, ...]  │  │
+│  └──────────────────────────────────────────────────┘  │
+│  ┌──────────────────────────────────────────────────┐  │
+│  │     MemorySystem (Persistent)                     │  │
+│  └──────────────────────────────────────────────────┘  │
+└────────────────────────────────────────────────────────┘
+             │              │              │
+             ↓              ↓              ↓
+    ┌───────────────┐ ┌─────────┐ ┌────────────┐
+    │  CLI Interface│ │ Web UI  │ │ Voice UI   │
+    │   (stdio)     │ │ (WS)    │ │ (audio)    │
+    │  Streaming ✅  │ │Stream ✅ │ │ Stream ✅   │
+    │  Tools ✅      │ │Tools ✅  │ │ Tools ✅    │
+    └───────────────┘ └─────────┘ └────────────┘
+```
+
+### Implementation Strategy
+
+#### 1. Create Shared Agent Service
+
+```python
+# core/agent_service.py
+class AgentService:
+    def __init__(self):
+        self.tool_registry = ToolRegistry()
+        self.memory = MemorySystem()
+        self.execution_engine = ExecutionEngine(self.tool_registry)
+        self.orchestrator = LLMOrchestrator({})
+        # Wire dependencies
+
+    async def process_streaming(self, user_input):
+        """Process with streaming responses"""
+        async for chunk in self._process_with_stream(user_input):
+            yield chunk
+
+    async def process(self, user_input):
+        """Process with full response"""
+        return await self.orchestrator.process(user_input)
+```
+
+#### 2. Update Web UI
+
+```python
+# ui/web/websocket_server/nodes.py
+from core.agent_service import AgentService
+
+class StreamingChatNode(AsyncNode):
+    def __init__(self):
+        self.agent = AgentService()  # Use shared agent
+
+    async def exec_async(self, prep_res):
+        messages, websocket = prep_res
+
+        # Use agent's streaming method
+        async for chunk in self.agent.process_streaming(messages[-1]):
+            await websocket.send_text(json.dumps({
+                "type": "chunk",
+                "content": chunk
+            }))
+```
+
+#### 3. Update Voice UI
+
+```python
+# ui/voice/pocketflow_voice/nodes.py
+from core.agent_service import AgentService
+
+class QueryLLMNode(AsyncNode):
+    def __init__(self):
+        self.agent = AgentService()
+
+    async def exec_async(self, prep_res):
+        text = prep_res
+        # Use agent instead of direct API
+        result = await self.agent.process(text)
+        return result["response"]
+```
+
+---
+
+## Migration Path
+
+### Phase 1: Add Streaming to Core
+1. Implement `LLMOrchestrator.process_streaming()`
+2. Add streaming to all LLM query methods
+3. Test with CLI
+
+### Phase 2: Create Shared Service
+1. Create `core/agent_service.py`
+2. Export unified interface
+3. Add streaming support
+
+### Phase 3: Migrate Web UI
+1. Import AgentService
+2. Replace direct OpenAI calls
+3. Test streaming
+4. Test tool access
+
+### Phase 4: Migrate Voice UI
+1. Import AgentService
+2. Replace call_llm()
+3. Test voice flow
+4. Test tool access
+
+### Phase 5: Cleanup
+1. Remove duplicate code
+2. Update documentation
+3. Add tests
+4. Verify all UIs work consistently
+
+---
+
+## Testing
+
+### Web UI
 ```bash
 cd ui/web/websocket_server
-pip install -r requirements.txt
 python main.py
+# Open http://localhost:8000
+# Test: "list files in current directory" (should use tools after integration)
 ```
 
-**Then open**: http://localhost:8000
-
-**Expected behavior**:
-1. Shows chat interface
-2. WebSocket connection
-3. User types message
-4. Calls LLM (likely OpenAI, not VIBE1337)
-5. Streams response back
-6. Updates UI
+### Voice UI
+```bash
+cd ui/voice/pocketflow_voice
+python main.py
+# Speak: "What files are in the current directory?"
+# Should use tools after integration
+```
 
 ---
 
-## Documentation Review
+## Future Enhancements
 
-### voice/pocketflow_voice/README.md
-- Setup instructions
-- OpenAI API key requirement
-- How to run
-- **No mention of VIBE1337 integration**
+### Web UI
+1. **Rich output formatting** - Code blocks, tables, images
+2. **File upload** - Analyze documents
+3. **Tool visualization** - Show which tools were used
+4. **Multi-session** - Multiple concurrent conversations
+5. **Authentication** - User accounts
 
-### web/websocket_server/README.md
-- FastAPI setup
-- WebSocket protocol
-- How to run
-- **No mention of VIBE1337 integration**
+### Voice UI
+1. **Wake word** - Hands-free activation
+2. **Interrupt handling** - Stop mid-response
+3. **Multi-language** - Support more languages
+4. **Emotion detection** - Sentiment analysis
+5. **Voice profiles** - User recognition
 
-**Conclusion**: Documentation confirms these are standalone apps
-
----
-
-## Recommendations
-
-### Immediate
-1. **Document clearly**: Add "STANDALONE - Not integrated with main agent" to READMEs
-2. **Decision needed**: Integrate or separate repository?
-3. **Update main README**: Don't claim "Advanced UI" if not connected
-
-### Short-term (if integrating)
-1. Import VIBE1337Agent in LLM nodes
-2. Call agent.process() instead of direct OpenAI
-3. Share memory system
-4. Test end-to-end
-5. Update documentation
-
-### Short-term (if separating)
-1. Move to separate repositories
-2. Remove from main codebase
-3. Link in main README as "Related Projects"
-4. Maintain independently
-
-### Long-term
-1. Unified architecture (if integrated)
-2. Shared configuration
-3. Consistent tool usage
-4. Real-time streaming support in main agent
-5. Multi-modal support (text + voice + web)
+### Both
+1. **Mobile apps** - iOS/Android clients
+2. **Desktop apps** - Electron wrappers
+3. **API mode** - REST API for integrations
+4. **Plugins** - Custom UI extensions
 
 ---
 
-## Code Statistics
+## Dependencies
 
-### voice/pocketflow_voice/
-- **Files**: ~10 Python files + assets
-- **LOC**: ~500 (estimated)
-- **Integration**: 0%
-- **Dependencies**: pocketflow, openai, sounddevice, numpy, scipy
-- **Status**: Standalone
+### Web UI
+- fastapi - Web framework
+- uvicorn - ASGI server
+- openai - API client (will be optional after integration)
+- pocketflow - Flow orchestration
 
-### web/websocket_server/
-- **Files**: ~6 Python files + HTML/assets
-- **LOC**: ~300 (estimated)
-- **Integration**: 0%
-- **Dependencies**: fastapi, uvicorn, pocketflow, websockets
-- **Status**: Standalone
-
-**Total**: ~800 LOC of UI code not connected to main agent
+### Voice UI
+- openai - API client (will be optional after integration)
+- pocketflow - Flow orchestration
+- numpy - Audio processing
+- sounddevice - Audio I/O
+- scipy - Audio utilities
+- soundfile - Audio formats
 
 ---
 
-## For AI Assistants
+## Performance
 
-**When working with UI code**:
+### Web UI
+- **WebSocket** - Low latency (~50ms)
+- **Streaming** - Immediate token delivery
+- **Concurrent** - Multiple clients supported
 
-✅ **DO**:
-- Treat as separate applications
-- Test standalone before integrating
-- Check for conflicts with main agent
-- Document integration approach
+### Voice UI
+- **STT Latency** - ~1-2s
+- **LLM Latency** - Variable (depends on response length)
+- **TTS Latency** - ~1-2s
+- **Total** - 2-4s + LLM time
 
-❌ **DON'T**:
-- Assume they work with main VIBE1337 agent
-- Modify without testing standalone
-- Break standalone functionality when integrating
-- Skip documentation updates
-
-**Key understanding**: These are PocketFlow apps that call LLMs directly, bypassing VIBE1337's orchestrator, tools, and security.
+### Optimization Opportunities
+1. **Local STT/TTS** - Reduce API calls
+2. **Response caching** - Cache common queries
+3. **Connection pooling** - Reuse HTTP connections
+4. **Parallel processing** - STT while recording continues
 
 ---
 
-## Summary
+## Security
 
-The `ui/` directory contains:
-- ⚠️ **voice/pocketflow_voice/**: Standalone voice chat (~500 LOC)
-- ⚠️ **web/websocket_server/**: Standalone web chat (~300 LOC)
-- ✅ **Both potentially functional**: But not tested
-- ❌ **Zero integration**: Not connected to main VIBE1337 agent
+### Web UI
+1. **WebSocket authentication** - Add token-based auth
+2. **Rate limiting** - Prevent abuse
+3. **Input validation** - Sanitize user input
+4. **CORS** - Restrict origins
 
-**Integration level**: 0%
+### Voice UI
+1. **Audio validation** - Check file formats
+2. **Content filtering** - Block harmful requests
+3. **Session management** - Timeout inactive sessions
 
-**What they do**: Call OpenAI directly for chat, with voice/web interfaces
+---
 
-**What they don't do**:
-- Use VIBE1337 orchestrator
-- Call VIBE1337 tools
-- Share VIBE1337 memory
-- Support multi-provider LLMs
-- Apply security hardening
+## Version History
 
-**Recommendation**:
-1. Short-term: Document as standalone
-2. Long-term: Integrate via minimal approach (import VIBE1337Agent)
-3. Alternative: Move to separate repos
-
-**Codebase reduction opportunity**: Moving to separate repos would cut ~800 LOC with clear separation of concerns.
+- v1.0 - Initial standalone implementations
+- v1.1 - Added streaming to web UI
+- v1.2 - Added voice UI
+- v2.0 (target) - Integrated with core agent
