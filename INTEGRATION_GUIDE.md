@@ -4,6 +4,25 @@
 
 This guide explains how to integrate additional tools and capabilities into VIBE1337. The system is designed to be extensible, allowing you to add new tools, LLM providers, and UI implementations.
 
+## Current Integration Status
+
+**✅ Fully Integrated (Ready to Use)**
+- 4 core tools: filesystem, shell, web_search, python_executor
+- 3 LLM providers: Ollama, OpenAI, Anthropic
+- 2 UIs: CLI, Web (both with streaming)
+- Persistent memory system
+- AgentService unified backend
+
+**⚠️ Available for Integration (Requires Setup)**
+- 27 GPTMe tools (requires `pip install gptme`)
+- MCP protocol infrastructure (stub implementation only)
+- Voice UI (requires full AgentService integration)
+
+**📚 Reference Material (Not Imported)**
+- AutoGen multi-agent framework (~15,000 LOC in `core/autogen_chat/`)
+
+This guide explains how to integrate additional tools and capabilities into VIBE1337. The system is designed to be extensible, allowing you to add new tools, LLM providers, and UI implementations.
+
 ## Table of Contents
 
 1. [Adding Custom Tools](#adding-custom-tools)
@@ -119,12 +138,20 @@ async def test_weather_tool():
 
 ## Integrating GPTMe Tools
 
+**⚠️ IMPORTANT: GPTMe tools are NOT currently integrated.**
+
+The `tools/gptme_tools/` directory contains 27 advanced tools (6,444 LOC) that are **not functional** without additional setup. All these files have hard dependencies on the `gptme` package which is not installed or included in `requirements.txt`.
+
 ### Prerequisites
 
 GPTMe tools require the full `gptme` package and its dependencies:
 
 ```bash
+# This package is NOT currently installed
 pip install gptme
+
+# Note: This may install additional dependencies and could conflict
+# with existing packages. Test in a virtual environment first.
 ```
 
 ### Dependencies for Specific Tools
@@ -237,6 +264,10 @@ def _initialize_default_tools(self):
 
 ## Setting up MCP Servers
 
+**⚠️ IMPORTANT: MCP infrastructure is a stub implementation.**
+
+The `tools/mcp/` directory contains infrastructure code but the `add_mcp_tools()` method in `tool_registry.py` is currently empty (stub implementation). MCP server integration requires additional development.
+
 ### What is MCP?
 
 Model Context Protocol (MCP) allows VIBE1337 to connect to external tool servers and dynamically load their capabilities.
@@ -244,7 +275,10 @@ Model Context Protocol (MCP) allows VIBE1337 to connect to external tool servers
 ### Prerequisites
 
 ```bash
+# These packages are mentioned but not currently installed
 pip install fastmcp langroid
+
+# Note: MCP integration requires implementing the add_mcp_tools() method
 ```
 
 ### Creating an MCP Server
@@ -686,4 +720,4 @@ For additional help:
 ---
 
 **Version:** 2.1.0
-**Last Updated:** 2025-01-19
+**Last Updated:** 2025-11-20
